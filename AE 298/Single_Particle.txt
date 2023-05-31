@@ -1,0 +1,58 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import sys
+
+sys.path.append('../shocktubecalc')
+from shocktubecalc import sod
+
+def main(P, V, D, M):
+
+    # Given constants and variables
+    C_d = 0.42 # Drag coefficient
+    gamma = 1.4
+    points = 500 # Number of plot points in graph
+    first_x = -0.25 # First x-value in graph
+    positions, regions, values = sod.solve(left_state=(1, 1, 0), right_state=(0.125, 0.1, 0.),
+                                           geometry=(first_x, 1., 0), t=0.2, gamma=gamma, npts=points)
+
+    # Defining necessary variables
+    F_d = np.zeros((points,)) # Creating an array for the drag force values
+    A = np.pi * D**2/4 # Projected Area
+    u_p = 0 # Current particle velocity
+    
+    for i in range(0, points - 1):
+        F_d[i] = 1/2 * C_d * values['rho'][i] * (u_p - values['u'][i])**2 * A
+        # u_p = u_p + F_d[i]/M # V_final = V_initial + (force / mass) * time (1)
+
+    # plot values
+    f, axarr = plt.subplots(3, 1, sharex='col')
+
+    axarr[0].plot(values['x'], values['rho'], linewidth=1.5)
+    axarr[0].set_ylabel(r'$\rho$')
+    axarr[0].set_xlabel(r'$x$')
+
+    axarr[1].plot(values['x'], values['u'], linewidth=1.5)
+    axarr[1].set_ylabel(r'$u$')
+    axarr[1].set_xlabel(r'$x$')
+
+    axarr[2].plot(values['x'], F_d, linewidth=1.5)
+    axarr[2].set_ylabel(r'Drag force')
+    axarr[2].set_xlabel(r'$x$')
+
+
+    plt.show()
+
+if __name__ == '__main__':
+
+    # Given values
+    u_p0 = 0
+    d = 115e-6 #m
+    rho_p = 2520 # kg/m^3
+
+    x0 = 0 # Initial Particle Position
+
+    r = d/2 # Particle Radius
+
+    m_p = 4/3 * np.pi * r**3 * rho_p # Particle Mass = Volume * Density
+    
+    main(x0, u_p0, d, m_p)
