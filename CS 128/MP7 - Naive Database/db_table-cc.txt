@@ -1,0 +1,249 @@
+#include "db_table.hpp"
+
+// const unsigned int kRowGrowthRate = 2;
+
+void DbTable::Resize() {  // almost done
+  unsigned int new_cap = row_col_capacity_ * 2;
+
+  for (unsigned int i = 0; i < rows_.size(); i++) {
+    void** new_rows = new void*[new_cap];
+    for (unsigned int j = 0; j < col_descs_.size(); j++) {
+      new_rows[j] = static_cast<void*>(rows_.at(i)[j]);
+    }
+    delete[] rows_.at(i);
+    rows_.at(i) = new_rows;
+  }
+
+  // for (unsigned int i = 0; i < new_cap; i++) {
+  //   delete[] static_cast<std::string*>(new_rows[i]); // fix this
+  // }
+  // delete[] new_rows;
+
+  row_col_capacity_ = new_cap;
+}
+
+void DbTable::AddColumn(
+    const std::pair<std::string, DataType>& col_desc) {  // fix Resize
+  if (col_descs_.size() == row_col_capacity_) {
+    Resize();
+  }
+
+  col_descs_.push_back(col_desc);
+
+  for (unsigned int i = 0; i < rows_.size(); i++) {
+    switch (col_desc.second) {
+    case DataType::kString:
+      rows_.at(i)[col_descs_.size() - 1] =
+          static_cast<void*>(new std::string(""));
+      break;
+    case DataType::kDouble:
+      rows_.at(i)[col_descs_.size() - 1] = static_cast<void*>(new double(0.0));
+      break;
+    case DataType::kInt:
+      rows_.at(i)[col_descs_.size() - 1] = static_cast<void*>(new int(0));
+      break;
+    }
+  }
+}
+
+void DbTable::DeleteColumnByIdx(unsigned int col_idx) {  // done
+  if (col_idx >= col_descs_.size()) {
+    throw std::out_of_range("Index out of bounds");
+  }
+
+  if (col_descs_.size() <= 1 && !rows_.empty()) {
+    throw std::runtime_error("Must have at least one column");
+  }
+
+  for (unsigned int i = 0; i < rows_.size(); i++) {
+    switch (col_descs_.at(col_idx).second) {
+      case DataType::kString:
+        delete static_cast<std::string*>(rows_.at(i)[col_idx]);     
+        break;
+      case DataType::kDouble:
+        delete static_cast<double*>(rows_.at(i)[col_idx]);      
+        break;
+      default:
+        delete static_cast<int*>(rows_.at(i)[col_idx]);
+        break;
+    }
+  }
+
+  for (unsigned int i = 0; i < rows_.size(); i++) {
+    for (unsigned int j = col_idx; j < col_descs_.size() - 1; j++) {
+      rows_.at(i)[j] = rows_.at(i)[j + 1];
+    }
+  }
+  
+  col_descs_.erase(col_descs_.begin() + col_idx);
+}
+
+void DbTable::AddRow(const std::initializer_list<std::string>& col_data) {  // done
+  if (col_data.size() != col_descs_.size()) {
+    throw std::invalid_argument("Invalid number of arguments");
+  }
+
+  void** new_row = new void*[row_col_capacity_];
+  unsigned int i = 0;
+
+  for (const std::string& str : col_data) {
+    switch (col_descs_[i].second) {
+    case DataType::kString:
+      new_row[i] = static_cast<void*>(new std::string(str));
+      break;
+    case DataType::kDouble:
+      new_row[i] = static_cast<void*>(new double(stod(str)));
+      break;
+    case DataType::kInt:
+      new_row[i] = static_cast<void*>(new int(stoi(str)));
+      break;
+    }
+
+    i++;
+  }
+
+  rows_.insert({next_unique_id_, new_row});
+  next_unique_id_++;
+}
+
+void DbTable::DeleteRowById(unsigned int id) {  // scuffed
+  if (!rows_.contains(id)) {
+    throw std::out_of_range("ID out of bounds");
+  }
+  for (unsigned int j = 0; j < col_descs_.size(); j++) {
+    switch (col_descs_[j].second) {
+    case DataType::kString:
+      delete static_cast<std::string*>(rows_.at(id)[j]);
+      break;
+    case DataType::kDouble:
+      delete static_cast<double*>(rows_.at(id)[j]);
+      break;
+    case DataType::kInt:
+      delete static_cast<int*>(rows_.at(id)[j]);
+      break;
+    }
+  }
+
+  delete[] rows_.at(id);
+  rows_.erase(id);
+}
+
+DbTable::DbTable(const DbTable& rhs) {
+  next_unique_id_ = rhs.next_unique_id_;
+  row_col_capacity_ = rhs.row_col_capacity_;
+  col_descs_ = rhs.col_descs_;
+  
+  for (auto const& [key, value] : rhs.rows_) {
+    rows_.insert(std::pair<unsigned int, void**>(key, new void*[row_col_capacity_]));
+    for (unsigned int i = 0; i < col_descs_.size(); i++) {
+      switch (col_descs_.at(i).second) {
+        case DataType::kString:
+          rows_[key][i] = static_cast<void*>(new std::string(*(static_cast<std::string*>(value[i]))));
+          break;
+        case DataType::kDouble:
+          rows_[key][i] = static_cast<void*>(new double(*(static_cast<double*>(value[i]))));
+          break;
+        default:
+          rows_[key][i] = static_cast<void*>(new int(*(static_cast<int*>(value[i]))));
+          break;
+      }   
+    }
+  }
+}
+
+void DbTable::Clear() {  // almost done
+  for (unsigned int i = 0; i < next_unique_id_; i++) {
+    if (rows_.contains(i)) {
+      for (unsigned int j = 0; j < col_descs_.size(); j++) {
+        switch (col_descs_[j].second) {
+          case DataType::kString:
+            delete static_cast<std::string*>(rows_.at(i)[j]);
+            break;
+          case DataType::kDouble:
+            delete static_cast<double*>(rows_.at(i)[j]);
+            break;
+          default:
+            delete static_cast<int*>(rows_.at(i)[j]);
+            break;
+        }
+      }
+      delete[] rows_.at(i);
+    }
+  }
+
+  rows_.clear();
+}
+
+DbTable& DbTable::operator=(const DbTable& rhs) {  // FIX and fix Clear
+  if (this == &rhs) {
+    return *this;
+  }
+
+  Clear();
+
+  next_unique_id_ = rhs.next_unique_id_;
+  row_col_capacity_ = rhs.row_col_capacity_;
+  col_descs_ = rhs.col_descs_;
+  
+  for (auto const& [key, value] : rhs.rows_) {
+    rows_.insert(std::pair<unsigned int, void**>(key, new void*[row_col_capacity_]));
+    for (unsigned int i = 0; i < col_descs_.size(); i++) {
+      switch (col_descs_.at(i).second) {
+        case DataType::kString:
+          rows_[key][i] = static_cast<void*>(new std::string(*(static_cast<std::string*>(value[i]))));
+          break;
+        case DataType::kDouble:
+          rows_[key][i] = static_cast<void*>(new double(*(static_cast<double*>(value[i]))));
+          break;
+        default:
+          rows_[key][i] = static_cast<void*>(new int(*(static_cast<int*>(value[i]))));
+          break;
+      }   
+    }
+  }
+
+  return *this;
+}
+
+DbTable::~DbTable() { Clear(); }  // fix Clear
+
+std::ostream& operator<<(std::ostream& os, const DbTable& table) {  // fix
+  for (unsigned int i = 0; i < table.col_descs_.size(); i++) {
+    os << table.col_descs_[i].first << "(";
+    switch (table.col_descs_[i].second) {
+    case DataType::kString:
+      os << "std::string";
+      break;
+    case DataType::kDouble:
+      os << "double";
+      break;
+    case DataType::kInt:
+      os << "int";
+      break;
+    }
+    os << ")";
+    if (i != table.col_descs_.size() - 1) { os << ", "; }
+  }
+  os << std::endl;
+  for (unsigned int i = 0; i < table.next_unique_id_; i++) {
+    for (unsigned int j = 0; j < table.col_descs_.size(); j++) {
+      switch (table.col_descs_.at(j).second) {
+      case DataType::kString:
+        os << *static_cast<std::string*>(table.rows_.at(i)[j]);
+        break;
+      case DataType::kDouble:
+        os << *static_cast<double*>(table.rows_.at(i)[j]);
+        break;
+      case DataType::kInt:
+        os << *static_cast<int*>(table.rows_.at(i)[j]);
+        break;
+      }
+      if (j != table.col_descs_.size() - 1) {
+        os << ", ";
+      }
+    }
+    os << std::endl;
+  }
+  // std::cout << "Next unique id: " << table.next_unique_id_ << std::endl;
+  return os;
+}

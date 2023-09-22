@@ -1,0 +1,54 @@
+#include <iostream>
+
+#include "branched-linked-list.hpp"
+
+int main() {
+  /* EXAMPLE INTERACTIONS WITH BLL */
+  BLL* first = new BLL();
+  first->PushBack('g');
+  first->PushBack('a');
+  first->PushBack('l');
+  first->PushBack('e');
+  first->PushBack('n');
+
+
+  // std::cout << "Size of name: " << first->Size() << std::endl; // 2
+
+  // /////////////////////////////////////
+
+  BLL* second = new BLL();
+  second->PushBack('r');
+  second->PushBack('c');
+  second->PushBack('h');
+
+  // std::cout << "Second string: " << second->ToString() << std::endl; // rch
+  // std::cout << "Size of string two: " << second->Size() << std::endl; // 3
+
+  // /////////////////////////////////////
+
+  // BLL* third = new BLL();
+  // third->PushBack('u');
+  // third->PushBack('m');
+
+  first->Join(1, second);
+  // second->Join(1, third);
+
+  // std::cout << "After joined: " << first->ToString() << std::endl; // hii!@
+  // std::cout << "Sum of numbers above: " << first->Size() << std::endl; // 5
+
+  // std::cout << "Second string again: " << second->ToString() << std::endl; // i!@
+  // std::cout << "Size of substring again: " << second->Size() << std::endl; // 3
+
+  // /////////////////////////////////////
+
+  // BLL* first_clone = new BLL();
+  // *first_clone = *first;
+
+  // std::cout << first_clone->ToString() << std::endl; // hii!@
+  // std::cout << first_clone->GetAt(3) << std::endl; // 5
+
+  second->Join(2, first);
+  std::cout << first->ToString() << std::endl;
+
+  return 0;
+}

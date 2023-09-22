@@ -1,0 +1,180 @@
+#include "WordSearchSolver.hpp"
+
+bool WordSearchSolver::LocationInBounds(size_t row, size_t col) const {
+  return ((row < puzzle_height_) && (col < puzzle_width_));
+}
+
+WordSearchSolver::WordSearchSolver(
+    const std::vector<std::vector<char>>& puzzle):
+    puzzle_(puzzle),
+    puzzle_height_(puzzle.size()),
+    puzzle_width_(puzzle[0].size()) {}
+
+WordLocation WordSearchSolver::HorizontalChecker(const std::string& word) {
+  std::vector<std::vector<std::string>> possible_words;
+  std::vector<std::string> filler;
+  std::string try_this;
+
+  for (unsigned int i = 0; i < puzzle_height_; i++) {
+    for (unsigned int j = 0; j < puzzle_width_ - word.length() + 1; j++) {
+      for (unsigned int k = 0; k < word.length(); k++) {
+        try_this += puzzle_[i][j + k];
+      }
+      filler.push_back(try_this);
+      try_this = "";
+    }
+    possible_words.push_back(filler);
+    filler.clear();
+  }
+
+  std::vector<CharPositions> char_vector;
+
+  for (unsigned int i = 0; i < possible_words.size(); i++) {
+    for (unsigned int j = 0; j < possible_words[0].size(); j++) {
+      if (possible_words[i][j] == word) {
+        for (unsigned int k = 0; k < word.length(); k++) {
+          char_vector.push_back({puzzle_[i][j + k], i, j + k});
+        }
+        return {word, char_vector};
+      }
+    }
+  }
+
+  return WordLocation{};
+}
+
+WordLocation WordSearchSolver::VerticalChecker(const std::string& word) {
+  std::vector<std::vector<std::string>> possible_words;
+  std::vector<std::string> filler;
+  std::string try_this;
+
+  for (unsigned int i = 0; i < puzzle_height_ - word.length() + 1; i++) {
+    for (unsigned int j = 0; j < puzzle_width_; j++) {
+      for (unsigned int k = 0; k < word.length(); k++) {
+        try_this += puzzle_[i + k][j];
+      }
+      filler.push_back(try_this);
+      try_this = "";
+    }
+    possible_words.push_back(filler);
+    filler.clear();
+  }
+
+  std::vector<CharPositions> char_vector;
+
+  for (unsigned int i = 0; i < possible_words.size(); i++) {
+    for (unsigned int j = 0; j < possible_words[0].size(); j++) {
+      if (possible_words[i][j] == word) {
+        for (unsigned int k = 0; k < word.length(); k++) {
+          char_vector.push_back({puzzle_[i + k][j], i + k, j});
+        }
+        return {word, char_vector};
+      }
+    }
+  }
+
+  return WordLocation{};
+}
+
+WordLocation WordSearchSolver::RightChecker(const std::string& word) {
+  std::vector<std::vector<std::string>> possible_words;
+  std::vector<std::string> filler;
+  std::string try_this;
+
+  for (unsigned int i = 0; i < puzzle_height_ - word.length() + 1; i++) {
+    for (unsigned int j = 0; j < puzzle_width_ - word.length() + 1; j++) {
+      for (unsigned int k = 0; k < word.length(); k++) {
+        try_this += puzzle_[i + k][j + k];
+      }
+      filler.push_back(try_this);
+      try_this = "";
+    }
+    possible_words.push_back(filler);
+    filler.clear();
+  }
+
+  std::vector<CharPositions> char_vector;
+
+  for (unsigned int i = 0; i < possible_words.size(); i++) {
+    for (unsigned int j = 0; j < possible_words[0].size(); j++) {
+      if (possible_words[i][j] == word) {
+        for (unsigned int k = 0; k < word.length(); k++) {
+          char_vector.push_back({puzzle_[i + k][j + k], i + k, j + k});
+        }
+        return {word, char_vector};
+      }
+    }
+  }
+
+  return WordLocation{};
+}
+
+WordLocation WordSearchSolver::LeftChecker(const std::string& word) {
+  std::vector<std::vector<std::string>> possible_words;
+  std::vector<std::string> filler;
+  std::string try_this;
+
+  for (unsigned int i = 0; i < puzzle_height_ - word.length() + 1; i++) {
+    for (unsigned int j = word.length() - 1; j < puzzle_width_; j++) {
+      for (unsigned int k = 0; k < word.length(); k++) {
+        try_this += puzzle_[i + k][j - k];
+      }
+      filler.push_back(try_this);
+      try_this = "";
+    }
+    possible_words.push_back(filler);
+    filler.clear();
+  }
+  // slayyyy queen ur doing great!!!!! :D
+  std::vector<CharPositions> char_vector;
+
+  for (unsigned int i = 0; i < possible_words.size(); i++) {
+    for (unsigned int j = 0; j < possible_words[0].size(); j++) {
+      if (possible_words[i][j] == word) {
+        for (unsigned int k = 0; k < word.length(); k++) {
+          char_vector.push_back({puzzle_[i + k][j + word.length() - k - 1],i + k,j + word.length() - k - 1});
+        }
+        return {word, char_vector};
+      }
+    }
+  }
+
+  return WordLocation{};
+}
+
+WordLocation WordSearchSolver::FindWord(const std::string& word,
+                                        CheckDirection direction) {
+  switch (direction) {
+  case CheckDirection::kHorizontal:
+    return HorizontalChecker(word);
+    break;
+  case CheckDirection::kVertical:
+    return VerticalChecker(word);
+    break;
+  case CheckDirection::kLeftDiag:
+    return LeftChecker(word);
+    break;
+  case CheckDirection::kRightDiag:
+    return RightChecker(word);
+    break;
+  }
+
+  return WordLocation{};
+}
+
+WordLocation WordSearchSolver::FindWord(const std::string& word) {
+  if (HorizontalChecker(word).word == word) {
+    return HorizontalChecker(word);
+  }
+  if (VerticalChecker(word).word == word) {
+    return VerticalChecker(word);
+  }
+  if (LeftChecker(word).word == word) {
+    return LeftChecker(word);
+  }
+  if (RightChecker(word).word == word) {
+    return RightChecker(word);
+  }
+
+  return WordLocation{};
+}

@@ -1,0 +1,199 @@
+#include "branched-linked-list.hpp"
+
+BLL::BLL() { head_ = nullptr; }
+
+BLL::BLL(const BLL& to_copy) {
+  if (to_copy.head_ == nullptr) {
+    head_ = nullptr;
+    return;
+  }
+
+  Node* walker = to_copy.head_;
+  Node* first = new Node(walker->data_);
+  head_ = first;
+
+  Node* temp = head_;
+
+  if (walker->next_bll_ != nullptr) { temp->next_bll_ = new BLL(*walker->next_bll_); }
+
+  walker = walker->next_node_;
+  while (walker != nullptr) {
+    temp->next_node_ = new Node(walker->data_);
+    temp = temp->next_node_;
+    if (walker->next_bll_ != nullptr) {
+      temp->next_bll_ = new BLL(*walker->next_bll_);
+    }
+    walker = walker->next_node_;
+  }
+}
+
+void BLL::Clear() {
+  while (head_ != nullptr) {
+    Node* iterate = head_->next_node_;
+    delete head_->next_bll_;
+    delete head_;
+    head_ = iterate;
+  }
+}
+
+BLL::~BLL() { Clear(); }
+
+BLL& BLL::operator=(const BLL& rhs) {
+  if (this == &rhs) { return *this; }
+
+  Clear();
+
+  if (rhs.head_ == nullptr) {
+    head_ = nullptr;
+    return *this;
+  }
+
+  Node* walker = rhs.head_;
+  Node* first = new Node(walker->data_);
+  head_ = first;
+
+  Node* temp = head_;
+
+  if (walker->next_bll_ != nullptr) { temp->next_bll_ = new BLL(*walker->next_bll_); }
+
+  walker = walker->next_node_;
+  while (walker != nullptr) {
+    temp->next_node_ = new Node(walker->data_);
+    temp = temp->next_node_;
+    if (walker->next_bll_ != nullptr) {
+      temp->next_bll_ = new BLL(*walker->next_bll_);
+    }
+    walker = walker->next_node_;
+  }
+
+  return *this;
+}
+
+Node* BLL::PushBack(char dat) {
+  if (head_ == nullptr) {
+    head_ = new Node(dat);
+    return head_;
+  }
+
+  Node* finder = head_;
+  while (finder->next_node_ != nullptr) { finder = finder->next_node_; }
+  finder->next_node_ = new Node(dat);
+
+  return finder->next_node_;
+}
+
+Node* BLL::Finder(Node* iterate, size_t idx, Node* saver) const {
+  if (idx == 0) { return iterate; }
+
+  if (iterate->next_bll_ != nullptr) {
+    idx--;
+    
+    if (iterate->next_bll_->Size() > idx) {
+      saver = iterate->next_node_;
+      return Finder(iterate->next_bll_->head_, idx, saver);
+    }
+
+    idx -= iterate->next_bll_->Size();
+    return Finder(iterate->next_node_, idx, saver);
+  }
+
+  if (iterate->next_node_ == nullptr) {
+    idx--;
+    return Finder(saver, idx, saver);
+  }
+
+  idx--;
+  return Finder(iterate->next_node_, idx, saver);
+}
+
+char BLL::GetAt(size_t idx) const {
+  if (idx < 0 || idx > Size() - 1) { throw std::runtime_error("Bad Get Input"); }
+
+  return Finder(head_, idx, head_)->data_;
+}
+
+void BLL::SetAt(size_t idx, char dat) {
+  if (idx < 0 || idx > Size() - 1) { throw std::runtime_error("Bad Set Input"); }
+
+  Finder(head_, idx, head_)->data_ = dat;
+}
+
+void BLL::Join(size_t idx, BLL* list) {
+  Node* find_join = head_;
+
+  for (size_t i = 0; i < idx; i++) {
+    if (find_join == nullptr) { throw std::runtime_error("Bad Get Input"); }
+
+    find_join = find_join->next_node_;
+  }
+
+  if (find_join->next_bll_ != nullptr) { throw std::runtime_error("Existing branch"); }
+  find_join->next_bll_ = list;
+
+  if (!(list->IsBLLAcyclic())) { throw std::runtime_error("This B* Cyclic"); }
+}
+
+std::string BLL::ToString() const {
+  if (head_ == nullptr) { return ""; }
+
+  std::string ans;
+  Node* letter = head_;
+
+  while (letter != nullptr) {
+    ans += letter->data_;
+    if (letter->next_bll_ != nullptr) { ans += letter->next_bll_->ToString(); }
+
+    letter = letter->next_node_;
+  }
+
+  return ans;
+}
+
+size_t BLL::Size() const {
+  if (head_ == nullptr) { return 0; }
+
+  size_t num = 0;
+  Node* letter = head_;
+
+  while (letter != nullptr) {
+    num += 1;
+    if (letter->next_bll_ != nullptr) { num += letter->next_bll_->Size(); }
+
+    letter = letter->next_node_;
+  }
+
+  return num;
+}
+
+bool BLL::IsBLLAcyclic() const { // true = ACYCLIC, false = CYCLIC
+  if (head_ == nullptr) { return true; }
+
+  Node* oogway = head_;
+  Node* shifu = head_->next_node_;
+
+  while (oogway != nullptr && shifu != nullptr) {
+    if (oogway == shifu) { return false; }
+
+    if (oogway->next_bll_ != nullptr) {
+      oogway = oogway->next_bll_->head_;
+    } else {
+      oogway = oogway->next_node_;
+    }
+
+    if (shifu->next_bll_ != nullptr) {
+      shifu = shifu->next_bll_->head_;
+    } else {
+      shifu = shifu->next_node_;
+    }
+    
+    if (shifu == nullptr) { return true; }
+
+    if (shifu->next_bll_ != nullptr) {
+      shifu = shifu->next_bll_->head_;
+    } else {
+      shifu = shifu->next_node_;
+    }
+  }
+
+  return true;
+}

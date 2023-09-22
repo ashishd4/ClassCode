@@ -1,0 +1,17 @@
+#include <iostream>
+#include <vector>
+
+#include "circular-linked-list.hpp"
+
+int main() {
+  CircularLinkedList<int> test;
+  test.InsertInOrder(1);
+  // test.InsertInOrder(4);
+  // test.InsertInOrder(3);
+  // test.InsertInOrder(1);
+  // test.InsertInOrder(0);
+  std::cout << test << std::endl;
+  test.Reverse();
+  std::cout << test << std::endl;
+  std::cout << "Finished" << std::endl;
+}

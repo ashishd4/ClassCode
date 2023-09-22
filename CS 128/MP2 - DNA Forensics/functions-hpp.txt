@@ -1,0 +1,14 @@
+#ifndef FUNCTIONS_HPP
+#define FUNCTIONS_HPP
+
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
+
+#include "utilities.hpp"
+using namespace std;
+
+string FindMatchingDNA(vector<vector<string>> table, string sequence);
+
+#endif

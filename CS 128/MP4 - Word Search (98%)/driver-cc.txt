@@ -1,0 +1,21 @@
+#include <iostream>
+#include <string>
+#include <vector>
+
+#include "WordSearchSolver.hpp"
+
+int main() {
+  std::vector<std::vector<char>> puzzle{{'d', 'e', 'a', 'o', 'u'},
+                                        {'h', 'e', 'l', 'p', 'o'},
+                                        {'c', 'a', 'l', 'o', 'm'},
+                                        {'a', 'e', 't', 'a', 'u'},
+                                        {'t', 'e', 't', 'o', 'u'}};
+
+  WordSearchSolver wss(puzzle);
+  // std::cout << wss.FindWord("let", CheckDirection::kLeftDiag);
+  if (wss.FindWord("dog").word.empty()) {
+    std::cout << "Loveee" << std::endl;
+  } else {
+    std::cout << "Eww" << std::endl;
+  }
+}

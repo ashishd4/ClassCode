@@ -1,0 +1,153 @@
+#include "seam_carver.hpp"
+
+// implement the rest of SeamCarver's functions here
+
+// given functions below, DO NOT MODIFY
+
+SeamCarver::SeamCarver(const ImagePPM& image): image_(image) {
+  height_ = image.GetHeight();
+  width_ = image.GetWidth();
+}
+
+void SeamCarver::SetImage(const ImagePPM& image) {
+  image_ = image;
+  width_ = image.GetWidth();
+  height_ = image.GetHeight();
+}
+
+int SeamCarver::GetEnergy(int row, int col) const {
+  int r_col = 0, g_col = 0, b_col = 0;
+  int r_row = 0, g_row = 0, b_row = 0;
+  int last_col = image_.GetWidth() - 1;
+  int last_row = image_.GetHeight() - 1;
+
+  if (col == 0) {
+    r_col = image_.GetPixel(row, last_col).GetRed() - image_.GetPixel(row, 1).GetRed();
+    g_col = image_.GetPixel(row, last_col).GetGreen() - image_.GetPixel(row, 1).GetGreen();
+    b_col = image_.GetPixel(row, last_col).GetBlue() - image_.GetPixel(row, 1).GetBlue();
+  } else if (col == last_col) {
+    r_col = image_.GetPixel(row, col - 1).GetRed() - image_.GetPixel(row, 0).GetRed();
+    g_col = image_.GetPixel(row, col - 1).GetGreen() - image_.GetPixel(row, 0).GetGreen();
+    b_col = image_.GetPixel(row, col - 1).GetBlue() - image_.GetPixel(row, 0).GetBlue();
+  } else {
+    r_col = image_.GetPixel(row, col - 1).GetRed() - image_.GetPixel(row, col + 1).GetRed();
+    g_col = image_.GetPixel(row, col - 1).GetGreen() - image_.GetPixel(row, col + 1).GetGreen();
+    b_col = image_.GetPixel(row, col - 1).GetBlue() - image_.GetPixel(row, col + 1).GetBlue();
+  }
+
+  if (row == 0) {
+    r_row = image_.GetPixel(last_row, col).GetRed() - image_.GetPixel(1, col).GetRed();
+    g_row = image_.GetPixel(last_row, col).GetGreen() - image_.GetPixel(1, col).GetGreen();
+    b_row = image_.GetPixel(last_row, col).GetBlue() - image_.GetPixel(1, col).GetBlue();
+  } else if (row == last_row) {
+    r_row = image_.GetPixel(row - 1, col).GetRed() - image_.GetPixel(0, col).GetRed();
+    g_row = image_.GetPixel(row - 1, col).GetGreen() - image_.GetPixel(0, col).GetGreen();
+    b_row = image_.GetPixel(row - 1, col).GetBlue() - image_.GetPixel(0, col).GetBlue();
+  } else {
+    r_row = image_.GetPixel(row - 1, col).GetRed() - image_.GetPixel(row + 1, col).GetRed();
+    g_row = image_.GetPixel(row - 1, col).GetGreen() - image_.GetPixel(row + 1, col).GetGreen();
+    b_row = image_.GetPixel(row - 1, col).GetBlue() - image_.GetPixel(row + 1, col).GetBlue();
+  }
+
+  int delta_col = r_col * r_col + g_col * g_col + b_col * b_col;
+  // std::cout << "delta col: " << delta_col << std::endl;
+  int delta_row = r_row * r_row + g_row * g_row + b_row * b_row;
+  // std::cout << "delta row: " << delta_row << std::endl;
+  return delta_col + delta_row;
+}
+
+int** SeamCarver::EnergyMap() const {
+  int** map = new int*[image_.GetHeight()];  // create energies
+  for (unsigned int i = 0; i < (unsigned int)image_.GetHeight();
+       i++) {  // make energies that 2D vector
+    map[i] = new int[image_.GetWidth()];
+  }
+  for (unsigned int i = 0; i < (unsigned int)image_.GetHeight();
+       i++) {  // populate energies
+    for (unsigned int j = 0; j < (unsigned int)image_.GetWidth(); j++) {
+      map[i][j] = GetEnergy((int)i, (int)j);
+      // std::cout << map[i][j] << " ";
+    }
+    // std::cout << std::endl;
+  }
+
+  return map;
+}
+
+int* SeamCarver::GetHorizontalSeam() const {
+  int** energies = EnergyMap();
+  int min = 0;
+  for (unsigned int i = image_.GetWidth() - 1; i >= 1; i--) {
+    for (unsigned int j = 0; j < (unsigned int)image_.GetHeight(); j++) {
+      min = energies[j][i];
+      if (j != 0 && min > energies[j - 1][i]) {
+        min = energies[j - 1][i]; }
+      if (j != (unsigned int)(image_.GetHeight() - 1) && min > energies[j + 1][i]) {
+        min = energies[j + 1][i]; }
+      energies[j][i - 1] += min; } }
+  int* hor_seam = new int[image_.GetWidth()];  // vert seam is the 1D vector we will ultimately be deleting
+  int first_row = 0;  // finding the starting column of vert seam
+  for (unsigned int i = 1; i < (unsigned int)image_.GetHeight(); i++) {
+    if (energies[first_row][0] > energies[i][0]) {
+      first_row = (int)i; } }
+  hor_seam[0] = first_row;
+  for (unsigned int i = 1; i < (unsigned int)image_.GetWidth(); i++) {  // finding the rest of the columns of vert seam
+    int next_row = hor_seam[i - 1], adder = 0;
+    if (next_row != 0 && energies[next_row][i] > energies[next_row - 1][i]) {
+      adder = -1; }
+    if (next_row != image_.GetHeight() - 1 && energies[next_row + adder][i] > energies[next_row + 1][i]) {
+      adder = 1; }
+    hor_seam[i] = next_row + adder; }
+  for (unsigned int i = 0; i < (unsigned int)image_.GetHeight(); i++) {  // deallocating memory
+    delete[] energies[i]; }
+  delete[] energies;
+  return hor_seam;  // how do I deallocate memory of vert seam?
+}
+
+int* SeamCarver::GetVerticalSeam() const {
+  int** energies = EnergyMap();
+  int min = 0;
+  for (unsigned int i = image_.GetHeight() - 1; i >= 1; i--) {
+    for (unsigned int j = 0; j < (unsigned int)image_.GetWidth(); j++) {
+      min = energies[i][j];
+      if (j != 0 && min > energies[i][j - 1]) {
+        min = energies[i][j - 1]; }
+      if (j != (unsigned int)(image_.GetWidth() - 1) && min > energies[i][j + 1]) {
+        min = energies[i][j + 1]; }
+      energies[i - 1][j] += min; } }
+  int* vert_seam = new int[image_.GetHeight()];  // vert seam is the 1D vector we will ultimately be deleting
+  int first_col = 0;  // finding the starting column of vert seam
+  for (unsigned int i = 1; i < (unsigned int)image_.GetWidth(); i++) {
+    if (energies[0][first_col] > energies[0][i]) {
+      first_col = (int)i; } }
+  vert_seam[0] = first_col;
+  for (unsigned int i = 1; i < (unsigned int)image_.GetHeight(); i++) {  // finding the rest of the columns of vert seam
+    int next_col = vert_seam[i - 1];
+    int adder = 0;
+    if (next_col != 0 && energies[i][next_col] > energies[i][next_col - 1]) {
+      adder = -1; }
+    if (next_col != image_.GetWidth() - 1 &&
+        energies[i][next_col + adder] > energies[i][next_col + 1]) {
+      adder = 1; }
+    vert_seam[i] = next_col + adder; }
+  for (unsigned int i = 0; i < (unsigned int)(image_.GetHeight()); i++) {  // deallocating memory
+    delete[] energies[i]; }
+  delete[] energies;
+  return vert_seam;  // how do I deallocate memory of vert seam?
+}
+
+void SeamCarver::RemoveHorizontalSeam() {
+  int* seam = GetHorizontalSeam();
+
+  image_.RowRemover(image_, seam);
+
+  delete[] seam;
+}
+
+void SeamCarver::RemoveVerticalSeam() {
+  int* seam = GetVerticalSeam();
+
+  image_.ColRemover(image_, seam);
+
+  delete[] seam;
+}

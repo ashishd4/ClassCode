@@ -1,0 +1,223 @@
+#include "functions.hpp"
+// Your function definitions should go in this source file.
+#include <iostream>
+#include <map>
+#include <string>
+#include <vector>
+using namespace std;
+
+string makeLowercase(string str_name) {  // step 1 DONE
+  string output = "";
+
+  for (unsigned int i = 0; i < str_name.size(); i++) {
+    output += tolower(str_name.at(i));
+  }
+
+  return output;
+}
+
+vector<string> makeIntoWords(string lowercaseSentence_name) {  // step 2 DONE
+  vector<string> output;
+  string workingWord = "";
+
+  for (unsigned int i = 0; i < lowercaseSentence_name.size(); i++) {
+    switch (lowercaseSentence_name.at(i)) {
+    case ' ':
+      output.push_back(workingWord);
+      workingWord.clear();
+      break;
+    default:
+      workingWord += lowercaseSentence_name.at(i);
+      break;
+    }
+
+    if (i == lowercaseSentence_name.size() - 1) {
+      output.push_back(workingWord);
+    }
+  }
+
+  return output;
+}
+
+string translator(string english) {  // step 4a, the most complicated function,
+                                     // the meat of MP1 DONE
+  string output = "";
+
+  for (unsigned int i = 0; i < english.size(); i++) {
+    switch (english.at(i)) {
+    case '\'':
+      if (output[output.size() - 1] == '-') {
+        output = output.substr(
+            0,
+            output.length() - 1);  // needs to remove hyphen from right before
+      }
+      output += "'";
+      break;
+    case 'a':
+      if (i == english.size() - 1) {
+        output += "ah";
+      } else {
+        switch (english.at(i + 1)) {
+        case 'i':
+          output += "eye-";
+          i++;
+          break;
+        case 'e':
+          output += "eye-";
+          i++;
+          break;
+        case 'o':
+          output += "ow-";
+          i++;
+          break;
+        case 'u':
+          output += "ow-";
+          i++;
+          break;
+        default:
+          output += "ah-";
+          break;
+        }
+      }
+      break;
+    case 'e':
+      if (i == english.size() - 1) {
+        output += "eh";
+      } else {
+        switch (english.at(i + 1)) {
+        case 'i':
+          output += "ay-";
+          i++;
+          break;
+        case 'u':
+          output += "eh-oo-";
+          i++;
+          break;
+        case 'w':
+          output += "eh-v";
+          i++;
+          break;
+        default:
+          output += "eh-";
+          break;
+        }
+      }
+      break;
+    case 'i':
+      if (i == english.size() - 1) {
+        output += "eh";
+      } else {
+        switch (english.at(i + 1)) {
+        case 'u':
+          output += "ew-";
+          i++;
+          break;
+        case 'w':
+          output += "ee-v";
+          i++;
+          break;
+        default:
+          output += "ee-";
+          break;
+        }
+      }
+      break;
+    case 'o':
+      if (i == english.size() - 1) {
+        output += "eh";
+      } else {
+        switch (english.at(i + 1)) {
+        case 'i':
+          output += "oy-";
+          i++;
+          break;
+        case 'u':
+          output += "ow-";
+          i++;
+          break;
+        default:
+          output += "oh-";
+          break;
+        }
+      }
+      break;
+    case 'u':
+      if (i == english.size() - 1) {
+        output += "eh";
+      } else {
+        switch (english.at(i + 1)) {
+        case 'i':
+          output += "ooey-";
+          i++;
+          break;
+        default:
+          output += "oo-";
+          break;
+        }
+      }
+      break;
+    default:
+      output += english.at(i);
+      break;
+    }
+  }
+  if (output[output.size() - 1] == '-') {
+    output = output.substr(
+        0, output.size() - 1);  // needs to remove hyphen from right before
+  }
+
+  return output;
+}
+
+vector<string> intoHawaiianWords(vector<string> wordSet) {  // step 4 DONE
+  vector<string> output;
+
+  for (unsigned int i = 0; i < wordSet.size(); i++) {
+    output.push_back(translator(wordSet.at(i)));  //
+  }
+
+  return output;
+}
+
+string putTogether(vector<string> hawaiianWordSet) {  // step 5 DONE
+  string output;
+
+  for (unsigned int i = 0; i < hawaiianWordSet.size(); i++) {
+    output += hawaiianWordSet.at(i) + " ";
+  }
+  output =
+      output.substr(0, output.length() - 1);  // trim out the space at the end
+
+  return output;
+}
+
+string MakeHawaiianPhrase(
+    string str) {  // the function in the driver class (contains step 3 DONE)
+  /** 1 - "E komo Mai" -> "e komo mai"
+   *  2 - "e komo mai" -> {"e", "komo", "mai"}
+   *  3 - make sure part of hawaiian language
+   *  4 - {"e", "komo", "mai"} -> {"eh", "koh-moh", "meye"}
+   *  5 - {"eh", "koh-moh", "meye"} -> "eh koh-moh meye"
+   * */
+  vector<char> hawaiianLetters = {
+      ' ', '\'', 'a', 'e', 'i', 'o', 'u', 'p', 'k', 'h', 'l', 'm', 'n', 'w'};
+
+  string lowercaseSentence = makeLowercase(str);
+  vector<string> words = makeIntoWords(lowercaseSentence);
+
+  for (unsigned int word = 0; word < words.size(); word++) {
+    for (unsigned int letter = 0; letter < words.at(word).length(); letter++) {
+      if (find(hawaiianLetters.begin(),
+               hawaiianLetters.end(),
+               words.at(word)[letter]) == hawaiianLetters.end()) {
+        return words.at(word) +
+               " contains a character not a part of the Hawaiian language.";
+      }
+    }
+  }
+
+  vector<string> hawaiianWords = intoHawaiianWords(words);
+  string answer = putTogether(hawaiianWords);
+
+  return answer;
+}
